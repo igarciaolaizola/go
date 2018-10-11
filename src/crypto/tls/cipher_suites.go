@@ -92,6 +92,12 @@ var cipherSuites = []*cipherSuite{
 	{TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA, 32, 20, 16, ecdheECDSAKA, suiteECDHE | suiteECDSA, cipherAES, macSHA1, nil},
 	{TLS_RSA_WITH_AES_128_GCM_SHA256, 16, 0, 4, rsaKA, suiteTLS12, nil, nil, aeadAESGCM},
 	{TLS_RSA_WITH_AES_256_GCM_SHA384, 32, 0, 4, rsaKA, suiteTLS12 | suiteSHA384, nil, nil, aeadAESGCM},
+
+	{TLS_ECDHE_ECDSA_WITH_AES_128_CCM, 16, 16, 12, ecdheECDSAKA, suiteECDHE | suiteECDSA | suiteTLS12, nil, nil, aeadAESCCM},
+	//{TLS_ECDHE_ECDSA_WITH_AES_256_CCM, 32, 16, 12, , ecdheECDSAKA, suiteECDHE | suiteECDSA | suiteTLS12, nil, nil, aeadAESCCM}
+	//{TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8, 16, 8, 12, , ecdheECDSAKA, suiteECDHE | suiteECDSA | suiteTLS12, nil, nil, aeadAESCCM}
+	//{TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8, 32, 8, 12, , ecdheECDSAKA, suiteECDHE | suiteECDSA | suiteTLS12, nil, nil, aeadAESCCM}
+
 	{TLS_RSA_WITH_AES_128_CBC_SHA256, 16, 32, 16, rsaKA, suiteTLS12 | suiteDefaultOff, cipherAES, macSHA256, nil},
 	{TLS_RSA_WITH_AES_128_CBC_SHA, 16, 20, 16, rsaKA, 0, cipherAES, macSHA1, nil},
 	{TLS_RSA_WITH_AES_256_CBC_SHA, 32, 20, 16, rsaKA, 0, cipherAES, macSHA1, nil},
@@ -221,6 +227,21 @@ func aeadAESGCM(key, fixedNonce []byte) cipher.AEAD {
 		panic(err)
 	}
 	aead, err := cipher.NewGCM(aes)
+	if err != nil {
+		panic(err)
+	}
+
+	ret := &fixedNonceAEAD{aead: aead}
+	copy(ret.nonce[:], fixedNonce)
+	return ret
+}
+
+func aeadAESCCM(key, fixedNonce []byte) cipher.AEAD {
+	aes, err := aes.NewCipher(key)
+	if err != nil {
+		panic(err)
+	}
+	aead, err := cipher.NewCCM(aes, 16, 12)
 	if err != nil {
 		panic(err)
 	}
@@ -386,6 +407,10 @@ const (
 	TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256 uint16 = 0xc02b
 	TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384   uint16 = 0xc030
 	TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 uint16 = 0xc02c
+	TLS_ECDHE_ECDSA_WITH_AES_128_CCM        uint16 = 0xc0ac
+	TLS_ECDHE_ECDSA_WITH_AES_256_CCM        uint16 = 0xc0ad
+	TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8      uint16 = 0xc0ae
+	TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8      uint16 = 0xc0af
 	TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305    uint16 = 0xcca8
 	TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305  uint16 = 0xcca9
 
